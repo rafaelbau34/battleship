@@ -70,3 +70,60 @@ export class Gameboard {
     return this.ships.length > 0 && this.ships.every((ship) => ship.isSunk());
   }
 }
+
+export class Player {
+  constructor(type = "REAL") {
+    this.type = type;
+    this.gameboard = new Gameboard();
+    this.previousHits = [];
+  }
+
+  randomAttack(enemyGameboard) {
+    if (this.type !== "COMPUTER") return;
+
+    let x, y, result;
+
+    if (this.previousHits.length > 0) {
+      const lastHit = this.previousHits[this.previousHits.length - 1];
+      const neighbors = [
+        { x: lastHit.x + 1, y: lastHit.y },
+        { x: lastHit.x - 1, y: lastHit.y },
+        { x: lastHit.x, y: lastHit.y + 1 },
+        { x: lastHit.x, y: lastHit.y - 1 },
+      ];
+
+      neighbors.sort(() => Math.random() - 0.5);
+
+      for (const coord of neighbors) {
+        if (this.isValidAttack(coord.x, coord.y, enemyGameboard)) {
+          x = coord.x;
+          y = coord.y;
+          break;
+        }
+      }
+    }
+
+    if (x === undefined) {
+      do {
+        x = Math.floor(Math.random() * 10);
+        y = Math.floor(Math.random() * 10);
+      } while (!this.isValidAttack(x, y, enemyGameboard));
+    }
+
+    result = enemyGameboard.receiveAttack(x, y);
+
+    if (result === "HIT") {
+      this.previousHits.push({ x, y });
+    } else if (result === "SUNK") {
+      this.previousHits = [];
+    }
+    return { x, y, result };
+  }
+
+  isValidAttack(x, y, board) {
+    if (x < 0 || x >= 10 || y < 0 || y >= 10) return false;
+    if (board.missedAttacks.some((m) => m.x === x && m.y === y)) return false;
+    if (board.grid[y][x] && board.grid[y][x].hit) return false;
+    return true;
+  }
+}
