@@ -1,0 +1,17 @@
+{
+  "name": "battleship-vanilla",
+  "version": "1.0.0",
+  "description": "Vanilla JS Battleship with TDD",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.0",
+    "@babel/preset-env": "^7.23.0",
+    "babel-jest": "^29.7.0",
+    "jest": "^29.7.0"
+  },
+  "type": "module"
+}
