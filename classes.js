@@ -78,13 +78,20 @@ export class Player {
     this.previousHits = [];
   }
 
+  reset() {
+    this.gameboard = new Gameboard();
+    this.previousHits = [];
+  }
+
   randomAttack(enemyGameboard) {
     if (this.type !== "COMPUTER") return;
 
     let x, y, result;
+    let potentialTargets = [];
 
     if (this.previousHits.length > 0) {
       const lastHit = this.previousHits[this.previousHits.length - 1];
+
       const neighbors = [
         { x: lastHit.x + 1, y: lastHit.y },
         { x: lastHit.x - 1, y: lastHit.y },
@@ -92,14 +99,14 @@ export class Player {
         { x: lastHit.x, y: lastHit.y - 1 },
       ];
 
-      neighbors.sort(() => Math.random() - 0.5);
+      potentialTargets = neighbors.sort(() => Math.random() - 0.5);
+    }
 
-      for (const coord of neighbors) {
-        if (this.isValidAttack(coord.x, coord.y, enemyGameboard)) {
-          x = coord.x;
-          y = coord.y;
-          break;
-        }
+    for (const coord of potentialTargets) {
+      if (this.isValidAttack(coord.x, coord.y, enemyGameboard)) {
+        x = coord.x;
+        y = coord.y;
+        break;
       }
     }
 
