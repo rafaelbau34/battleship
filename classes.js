@@ -37,7 +37,7 @@ export class Gameboard {
     this.ships.push(ship);
 
     for (let i = 0; i < ship.length; i++) {
-      const currentX = isVertical ? x : x + 1;
+      const currentX = isVertical ? x : x + i;
       const currentY = isVertical ? y + i : y;
       this.grid[currentY][currentX] = { ship: ship, hit: false };
     }
