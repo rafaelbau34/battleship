@@ -1,12 +1,12 @@
+// dom.js
 export const DOM = {
-  boardsContainer: document.getElementById("boards-container"),
   playerBoardDiv: document.getElementById("player-board"),
   computerBoardDiv: document.getElementById("computer-board"),
   messageLog: document.getElementById("message-log"),
   shipDock: document.getElementById("ship-dock"),
-  rotateBtn: document.getElementById("rotate-btn"),
+  startBtn: document.getElementById("start-btn"),
 
-  renderGrid(gameboard, owner, cellCallback = null) {
+  renderGrid(gameboard, owner, handlers = {}, state = {}) {
     const container =
       owner === "player" ? this.playerBoardDiv : this.computerBoardDiv;
     container.innerHTML = "";
@@ -16,56 +16,55 @@ export const DOM = {
         const cell = document.createElement("div");
         cell.dataset.x = x;
         cell.dataset.y = y;
-        cell.dataset.owner = owner;
+        cell.className = `w-8 h-8 md:w-10 md:h-10 border border-slate-700 flex items-center justify-center transition-all duration-150`;
 
-        cell.className = `
-          w-8 h-8 md:w-10 md:h-10 border border-slate-700 transition-colors duration-200
-          flex items-center justify-center cursor-pointer select-none
-        `;
+        const data = gameboard.grid[y][x];
+        const isMiss = gameboard.missedAttacks.some(
+          (m) => m.x === x && m.y === y
+        );
 
-        const gridData = gameboard.grid[y][x];
-
-        if (gridData && gridData.ship) {
-          if (owner === "player" || gridData.ship.isSunk()) {
-            cell.classList.add("bg-slate-500");
-            cell.classList.add("border-slate-400");
-            if (gridData.ship.isSunk()) {
-              cell.classList.add("opacity-50"); // Dim sunk ships
-            }
+        // Styling logic
+        if (data && data.ship) {
+          const isRevealed =
+            owner === "player" || state.cheatMode || data.ship.isSunk();
+          if (isRevealed) {
+            cell.classList.add(
+              data.ship.isSunk() ? "bg-slate-700" : "bg-slate-500"
+            );
+          } else {
+            cell.classList.add("bg-slate-800/50");
           }
+          if (data.hit) {
+            cell.classList.add("bg-red-600", "text-white");
+            cell.innerHTML = "✕";
+          }
+        } else if (isMiss) {
+          cell.classList.add("bg-cyan-950");
+          cell.innerHTML =
+            '<div class="w-2 h-2 rounded-full bg-cyan-500"></div>';
         } else {
           cell.classList.add("bg-slate-800/50");
         }
 
-        if (gridData && gridData.hit) {
-          cell.classList.remove("bg-slate-500", "bg-slate-800/50");
-          cell.classList.add("bg-red-500"); // Hit!
-          cell.innerHTML = "✕";
-        }
-
-        const isMiss = gameboard.missedAttacks.some(
-          (m) => m.x === x && m.y === y
-        );
-        if (isMiss) {
-          cell.classList.remove("bg-slate-800/50");
-          cell.classList.add("bg-cyan-900"); // Miss
-          cell.innerHTML = "•";
-        }
-
-        if (owner === "computer" && cellCallback) {
-          cell.addEventListener("click", () => cellCallback(x, y));
-          if (!gridData?.hit && !isMiss) {
-            cell.classList.add("hover:bg-red-900/50");
+        // Interaction Handlers
+        if (owner === "computer" && handlers.onClick && !state.isGameOver) {
+          if (!data?.hit && !isMiss) {
+            cell.classList.add("cursor-crosshair", "hover:bg-red-900/40");
+            cell.onclick = () => handlers.onClick(x, y);
           }
         }
 
-        if (owner === "player" && cellCallback) {
-          cell.addEventListener("dragover", (e) => e.preventDefault());
-          cell.addEventListener("drop", (e) => {
+        if (owner === "player" && handlers.onDrop) {
+          cell.ondragover = (e) => {
             e.preventDefault();
-            const shipName = e.dataTransfer.getData("text/plain");
-            cellCallback(x, y, shipName);
-          });
+            handlers.onDragOver(x, y);
+          };
+          cell.ondragleave = () => handlers.onDragLeave();
+          cell.ondrop = (e) => {
+            e.preventDefault();
+            const name = e.dataTransfer.getData("text/plain");
+            handlers.onDrop(x, y, name);
+          };
         }
 
         container.appendChild(cell);
@@ -73,57 +72,48 @@ export const DOM = {
     }
   },
 
-  renderFleetDock(ships) {
+  renderFleetDock(ships, placedNames) {
     this.shipDock.innerHTML = "";
-    ships.forEach((ship) => {
-      const shipDiv = document.createElement("div");
-      shipDiv.draggable = true;
-      shipDiv.dataset.name = ship.name;
-      shipDiv.dataset.length = ship.length;
-
-      shipDiv.className = `
-            bg-slate-600 border border-slate-400 p-2 cursor-grab active:cursor-grabbing
-            text-xs font-bold text-center rounded shadow-lg hover:bg-slate-500
-        `;
-      shipDiv.style.width = `${ship.length * 2.5}rem`; // rough visual scaling
-      shipDiv.innerText = `${ship.name} (${ship.length})`;
-
-      shipDiv.addEventListener("dragstart", (e) => {
-        e.dataTransfer.setData("text/plain", ship.name);
-        shipDiv.classList.add("opacity-50");
+    ships
+      .filter((s) => !placedNames.includes(s.name))
+      .forEach((ship) => {
+        const shipDiv = document.createElement("div");
+        shipDiv.draggable = true;
+        // Fixed alignment with flex items-center justify-center and whitespace-nowrap
+        shipDiv.className =
+          "bg-sky-700 border border-sky-400 p-2 cursor-grab active:cursor-grabbing text-xs font-bold rounded shadow hover:bg-sky-600 transition-colors flex items-center justify-center whitespace-nowrap overflow-hidden";
+        shipDiv.style.width = `${ship.length * 3}rem`; // Slightly wider for better text fit
+        shipDiv.innerText = ship.name;
+        shipDiv.ondragstart = (e) => {
+          e.dataTransfer.setData("text/plain", ship.name);
+          shipDiv.classList.add("opacity-50");
+        };
+        shipDiv.ondragend = () => shipDiv.classList.remove("opacity-50");
+        this.shipDock.appendChild(shipDiv);
       });
-
-      shipDiv.addEventListener("dragend", () => {
-        shipDiv.classList.remove("opacity-50");
-      });
-
-      this.shipDock.appendChild(shipDiv);
-    });
   },
 
   updateMessage(msg, type = "info") {
     this.messageLog.textContent = msg;
-    this.messageLog.className = "text-center text-lg font-bold min-h-[2rem] ";
-
-    if (type === "error") this.messageLog.classList.add("text-red-400");
-    else if (type === "success")
-      this.messageLog.classList.add("text-green-400");
-    else this.messageLog.classList.add("text-slate-200");
+    const colors = {
+      error: "text-red-400",
+      success: "text-green-400",
+      info: "text-slate-300",
+    };
+    this.messageLog.className = `text-center text-lg font-bold min-h-[2rem] ${
+      colors[type] || colors.info
+    }`;
   },
 
   toggleScreen(screenName) {
-    const setupScreen = document.getElementById("setup-controls");
-    const gameScreen = document.getElementById("game-controls");
-    const dock = document.getElementById("dock-container");
-
-    if (screenName === "setup") {
-      setupScreen.classList.remove("hidden");
-      gameScreen.classList.add("hidden");
-      dock.classList.remove("hidden");
-    } else {
-      setupScreen.classList.add("hidden");
-      gameScreen.classList.remove("hidden");
-      dock.classList.add("hidden");
-    }
+    document
+      .getElementById("setup-controls")
+      .classList.toggle("hidden", screenName !== "setup");
+    document
+      .getElementById("game-controls")
+      .classList.toggle("hidden", screenName !== "game");
+    document
+      .getElementById("dock-container")
+      .classList.toggle("hidden", screenName !== "setup");
   },
 };

@@ -3,9 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Battleship</title>
+    <title>Tactical Battleship</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="style.js" />
     <style>
       @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap");
       body {
@@ -14,93 +13,107 @@
     </style>
   </head>
   <body
-    class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center py-8"
+    class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center py-6"
   >
-    <header class="mb-8 text-center">
-      <h1 class="text-4xl font-bold text-sky-400 tracking-widest mb-2">
-        BATTLESHIP
+    <header class="mb-6 text-center">
+      <h1
+        class="text-4xl font-bold text-sky-500 tracking-[0.2em] mb-2 uppercase"
+      >
+        Tactical Combat
       </h1>
-      <div id="message-log" class="text-lg min-h-[1.75rem] text-slate-300">
-        Initialize sequence...
+      <div id="message-log" class="text-lg font-medium h-8">
+        Waiting for commander...
       </div>
     </header>
 
-    <main class="w-full max-w-6xl px-4 flex flex-col items-center">
+    <main class="w-full max-w-5xl px-4 flex flex-col items-center">
       <div
         id="boards-container"
-        class="flex flex-col md:flex-row gap-12 mb-8 justify-center w-full"
+        class="flex flex-col lg:flex-row gap-8 mb-8 justify-center w-full"
       >
         <div class="flex flex-col items-center">
-          <h2 class="text-xl font-bold text-slate-400 mb-4 tracking-wider">
-            FRIENDLY WATERS
+          <h2
+            class="text-sm font-bold text-sky-400 mb-3 tracking-widest uppercase"
+          >
+            Friendly Sector
           </h2>
           <div
             id="player-board"
-            class="grid grid-cols-10 grid-rows-10 gap-px bg-slate-700 border-2 border-slate-600 shadow-2xl shadow-sky-900/20"
+            class="grid grid-cols-10 grid-rows-10 gap-px bg-slate-700 border border-slate-700 shadow-xl"
           ></div>
         </div>
 
         <div class="flex flex-col items-center">
-          <h2 class="text-xl font-bold text-red-400 mb-4 tracking-wider">
-            ENEMY WATERS
+          <h2
+            class="text-sm font-bold text-red-500 mb-3 tracking-widest uppercase"
+          >
+            Enemy Sector
           </h2>
           <div
             id="computer-board"
-            class="grid grid-cols-10 grid-rows-10 gap-px bg-slate-700 border-2 border-slate-600 shadow-2xl shadow-red-900/20"
+            class="grid grid-cols-10 grid-rows-10 gap-px bg-slate-700 border border-slate-700 shadow-xl"
           ></div>
         </div>
       </div>
+
       <div
-        class="w-full max-w-2xl bg-slate-800 rounded-lg p-6 shadow-xl border border-slate-700"
+        class="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-lg p-5 shadow-2xl"
       >
-        <div id="dock-container" class="mb-6">
-          <p class="text-sm text-slate-400 mb-2 uppercase tracking-wide">
-            Shipyard (Drag to Board)
+        <div id="dock-container" class="mb-5">
+          <p class="text-xs text-slate-500 mb-2 uppercase font-bold">
+            Shipyard
           </p>
           <div
             id="ship-dock"
-            class="flex flex-wrap gap-4 p-4 bg-slate-900 rounded border border-slate-700 min-h-[80px] items-center justify-center"
+            class="flex flex-wrap gap-3 p-3 bg-slate-950 rounded border border-slate-800 min-h-[60px] items-center justify-center"
           ></div>
         </div>
 
-        <div id="setup-controls" class="flex gap-4 justify-center">
+        <div id="setup-controls" class="flex flex-wrap gap-3 justify-center">
           <button
             id="rotate-btn"
-            class="px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded font-bold transition shadow-lg text-sm uppercase"
+            class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 rounded text-xs font-bold uppercase tracking-wider transition"
           >
             Axis: Horizontal
           </button>
           <button
             id="random-btn"
-            class="px-6 py-3 bg-slate-600 hover:bg-slate-500 rounded font-bold transition shadow-lg text-sm uppercase"
+            class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 rounded text-xs font-bold uppercase tracking-wider transition"
           >
             Randomize
           </button>
           <button
             id="start-btn"
             disabled
-            class="px-6 py-3 bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed rounded font-bold transition shadow-lg text-sm uppercase text-white"
+            class="px-8 py-2.5 bg-sky-600 hover:bg-sky-500 rounded text-xs font-bold uppercase tracking-widest transition shadow-lg text-white"
           >
-            Start Combat
+            Engage Fleet
           </button>
         </div>
 
-        <div id="game-controls" class="hidden flex justify-center">
+        <div id="game-controls" class="hidden flex gap-4 justify-center">
+          <button
+            id="cheat-btn"
+            class="px-5 py-2.5 bg-slate-800 hover:bg-amber-600 rounded text-xs font-bold uppercase tracking-wider transition"
+          >
+            Toggle Intel
+          </button>
           <button
             id="restart-btn"
-            class="px-8 py-3 bg-red-600 hover:bg-red-500 rounded font-bold transition shadow-lg text-sm uppercase"
+            class="px-5 py-2.5 bg-red-900/40 hover:bg-red-800 rounded text-xs font-bold uppercase tracking-wider transition"
           >
-            Reset Coordinates
+            Abort Mission
           </button>
         </div>
       </div>
     </main>
 
-    <footer class="mt-auto py-4 text-slate-600 text-xs">
-      Vanilla JS • Tailwind • Jest
+    <footer
+      class="mt-auto py-4 text-slate-700 text-[10px] uppercase tracking-widest font-bold"
+    >
+      Naval Tactical Unit // Vanilla JS // CCS Grid
     </footer>
 
-    <div id="root"></div>
     <script type="module" src="index.js"></script>
   </body>
 </html>

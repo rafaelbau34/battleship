@@ -1,3 +1,4 @@
+// classes.js
 export class Ship {
   constructor(name, length) {
     this.name = name;
@@ -23,7 +24,6 @@ export class Gameboard {
     this.grid = Array(size)
       .fill(null)
       .map(() => Array(size).fill(null));
-
     this.missedAttacks = [];
     this.ships = [];
   }
@@ -33,9 +33,7 @@ export class Gameboard {
       return false;
     }
 
-    ship.position = { x, y, isVertical };
     this.ships.push(ship);
-
     for (let i = 0; i < ship.length; i++) {
       const currentX = isVertical ? x : x + i;
       const currentY = isVertical ? y + i : y;
@@ -44,17 +42,24 @@ export class Gameboard {
     return true;
   }
 
+  isValidPlacement(length, x, y, isVertical) {
+    for (let i = 0; i < length; i++) {
+      const curX = isVertical ? x : x + i;
+      const curY = isVertical ? y + i : y;
+
+      if (curX < 0 || curX >= this.size || curY < 0 || curY >= this.size)
+        return false;
+      if (this.grid[curY][curX] !== null) return false;
+    }
+    return true;
+  }
+
   receiveAttack(x, y) {
     if (x < 0 || x >= this.size || y < 0 || y >= this.size) return false;
 
     const cell = this.grid[y][x];
-    if (this.missedAttacks.some((coord) => coord.x === x && coord.y === y)) {
-      return false;
-    }
-
-    if (cell && cell.hit) {
-      return false;
-    }
+    if (cell && cell.hit) return false;
+    if (this.missedAttacks.some((m) => m.x === x && m.y === y)) return false;
 
     if (cell === null) {
       this.missedAttacks.push({ x, y });
@@ -67,7 +72,7 @@ export class Gameboard {
   }
 
   allShipsSunk() {
-    return this.ships.length > 0 && this.ships.every((ship) => ship.isSunk());
+    return this.ships.length > 0 && this.ships.every((s) => s.isSunk());
   }
 }
 
@@ -83,51 +88,44 @@ export class Player {
     this.previousHits = [];
   }
 
-  randomAttack(enemyGameboard) {
-    if (this.type !== "COMPUTER") return;
-
+  randomAttack(enemyBoard) {
     let x, y, result;
-    let potentialTargets = [];
+    let found = false;
 
+    // Smart targeting: check neighbors of last hit
     if (this.previousHits.length > 0) {
-      const lastHit = this.previousHits[this.previousHits.length - 1];
-
+      const last = this.previousHits[this.previousHits.length - 1];
       const neighbors = [
-        { x: lastHit.x + 1, y: lastHit.y },
-        { x: lastHit.x - 1, y: lastHit.y },
-        { x: lastHit.x, y: lastHit.y + 1 },
-        { x: lastHit.x, y: lastHit.y - 1 },
-      ];
+        { x: last.x + 1, y: last.y },
+        { x: last.x - 1, y: last.y },
+        { x: last.x, y: last.y + 1 },
+        { x: last.x, y: last.y - 1 },
+      ].sort(() => Math.random() - 0.5);
 
-      potentialTargets = neighbors.sort(() => Math.random() - 0.5);
-    }
-
-    for (const coord of potentialTargets) {
-      if (this.isValidAttack(coord.x, coord.y, enemyGameboard)) {
-        x = coord.x;
-        y = coord.y;
-        break;
+      for (const n of neighbors) {
+        if (this.isValidMove(n.x, n.y, enemyBoard)) {
+          x = n.x;
+          y = n.y;
+          found = true;
+          break;
+        }
       }
     }
 
-    if (x === undefined) {
+    if (!found) {
       do {
         x = Math.floor(Math.random() * 10);
         y = Math.floor(Math.random() * 10);
-      } while (!this.isValidAttack(x, y, enemyGameboard));
+      } while (!this.isValidMove(x, y, enemyBoard));
     }
 
-    result = enemyGameboard.receiveAttack(x, y);
-
-    if (result === "HIT") {
-      this.previousHits.push({ x, y });
-    } else if (result === "SUNK") {
-      this.previousHits = [];
-    }
+    result = enemyBoard.receiveAttack(x, y);
+    if (result === "HIT") this.previousHits.push({ x, y });
+    if (result === "SUNK") this.previousHits = [];
     return { x, y, result };
   }
 
-  isValidAttack(x, y, board) {
+  isValidMove(x, y, board) {
     if (x < 0 || x >= 10 || y < 0 || y >= 10) return false;
     if (board.missedAttacks.some((m) => m.x === x && m.y === y)) return false;
     if (board.grid[y][x] && board.grid[y][x].hit) return false;
